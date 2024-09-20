@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.ps.springbootwebturorial.dto.EmployeeDTO;
 import com.ps.springbootwebturorial.entities.EmployeeEntity;
+import com.ps.springbootwebturorial.exception.ResourceNotFoundException;
 import com.ps.springbootwebturorial.repositories.EmployeeRepository;
 
 @Service
@@ -42,22 +43,26 @@ public class EmployeeService {
 	}
 
 	public EmployeeDTO updateEmployeeById(EmployeeDTO employeeDTO, Long empid) {
+	isExistByEmployeeId(empid);
 	EmployeeEntity employeeEntity = modelMapper.map(employeeDTO, EmployeeEntity.class);
 	employeeEntity.setId(empid);
 	EmployeeEntity savedEmployeeEntity= employeerepository.save(employeeEntity);
 	return modelMapper.map(savedEmployeeEntity, EmployeeDTO.class);
 	}
+	
+	public void isExistByEmployeeId(Long Empid) {
+		boolean exists= employeerepository.existsById(Empid);
+		if(!exists) throw new ResourceNotFoundException("Employee not found with id :"+Empid);
+	}
 
 	public Boolean deleteEmployeeById(Long employeeld) {
-	Boolean checkempId=employeerepository.existsById(employeeld); 
-	if(!checkempId) return false;
+	isExistByEmployeeId(employeeld);
 	employeerepository.deleteById(employeeld);
 	return true;
 	}
 
 	public EmployeeDTO updatePartialEmployeeById(Map<String, Object> updates, Long employeeId) {
-	Boolean checkempId=employeerepository.existsById(employeeId);
-	if(!checkempId) return null; 
+	isExistByEmployeeId(employeeId);
 	EmployeeEntity employeeEntity = employeerepository.findById(employeeId).get(); 
 	updates.forEach((field, value)->{
 	Field fieldtobeUpdate = ReflectionUtils.findRequiredField(EmployeeEntity.class, field);

@@ -43,7 +43,7 @@ public class EmployeeController {
 	Optional<EmployeeDTO> employeeDTO= employeeservice.getEmployeeById(id);
 	return employeeDTO
 	.map(employeeDT01 -> ResponseEntity.ok(employeeDT01)) 
-	.orElseThrow(()->new ResourceNotFoundException("Employee not found"));
+	.orElseThrow(()->new ResourceNotFoundException("Employee not found with id :"+id));
 	}
 	
 	

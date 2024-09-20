@@ -1,17 +1,58 @@
 package com.ps.springbootwebturorial.advices;
 
 import java.util.NoSuchElementException;
-
+import java.util.stream.Collectors;
+import java.util.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.ps.springbootwebturorial.exception.ResourceNotFoundException;
+
+import net.bytebuddy.description.modifier.MethodArguments;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 	
-	@ExceptionHandler(NoSuchElementException.class)
-	public ResponseEntity<String> handleNoSuchElementException(NoSuchElementException exception){
-		return new ResponseEntity<>("Resource not found", HttpStatus.NOT_FOUND);
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<ApiResponse<?>> handleNoSuchElementException(ResourceNotFoundException exception){
+		ApiError apiError = ApiError.builder()
+				.status(HttpStatus.NOT_FOUND)
+				.message(exception.getMessage())
+				.build();
+		return buildErrorResponseEntity(apiError);
 	}
+	
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ApiResponse<?>> handleInternalServerError(Exception exception){
+		ApiError apiError = ApiError.builder()
+				.status( HttpStatus.INTERNAL_SERVER_ERROR)
+				.message(exception.getMessage())
+				.build();
+		return buildErrorResponseEntity(apiError);
+	}
+	
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ApiResponse<?>> handleInputValidationError(MethodArgumentNotValidException exception){
+		List<String> errors=exception
+				.getBindingResult()
+				.getAllErrors()
+				.stream()
+				.map(error->error.getDefaultMessage())
+				.collect(Collectors.toList());
+		
+		ApiError apiError = ApiError.builder()
+				.status( HttpStatus.BAD_REQUEST)
+				.message("Input Validation Failed")
+				.subError(errors)
+				.build();
+		return buildErrorResponseEntity(apiError);
+	}
+	
+	private ResponseEntity<ApiResponse<?>> buildErrorResponseEntity(ApiError apiError) {
+        return new ResponseEntity<>(new ApiResponse<>(apiError), apiError.getStatus());
+    }
+	
 }
